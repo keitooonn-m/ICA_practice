@@ -1,33 +1,33 @@
 clear; close all; clc;
 
-dimn = 2;
-xMat = zeros(dimn, 10);
+dims = 2;
+xVecArr = zeros(dims, 10);
 mu = 0.001;
 el = 30;
 phiFn = @(x) tanh(x);
 
-xCount = size(xMat, 2);
-iMat = eye(dimn);
-wTen = zeros(dimn, dimn, el);
-wTen(:, :, 1) = eye(dimn);
+xCount = size(xVecArr, 2);
+iMat = eye(dims);
+wMatArr = zeros(dims, dims, el);
+wMatArr(:, :, 1) = eye(dims);
 for i = 1:el - 1
-    eMat = zeros(dimn, dimn);
+    eMat = zeros(dims, dims);
     for j = 1:xCount
-        yVec = wTen(:, :, i) * xMat(:, j);
+        yVec = wMatArr(:, :, i) * xVecArr(:, j);
         eMat = eMat + phiFn(yVec) * yVec';
     end
     eMat = eMat / xCount;
-    wTen(:, :, i + 1) = wTen(:, :, i) - mu * (eMat - iMat) * wTen(:, :, i);
+    wMatArr(:, :, i + 1) = wMatArr(:, :, i) - mu * (eMat - iMat) * wMatArr(:, :, i);
 end
 
-yMat = zeros(dimn, xCount);
+yMat = zeros(dims, xCount);
 for i = 1:xCount
-    yMat(:, i) = wTen(:, :, end) * xMat(:, i);
+    yMat(:, i) = wMatArr(:, :, end) * xVecArr(:, i);
 end
 
-yTen = zeros(dimn, dimn, xCount);
+yTen = zeros(dims, dims, xCount);
 for i = 1:xCount
-    for j = 1:dimn
-        yTen(:, j, i) = wTen(:, :, end) \ (yMat(:, i) .* iMat(:, j));
+    for j = 1:dims
+        yTen(:, j, i) = wMatArr(:, :, end) \ (yMat(:, i) .* iMat(:, j));
     end
 end

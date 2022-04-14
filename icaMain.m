@@ -1,38 +1,32 @@
 clear; close all; clc;
 
-% dims : 信号源・観測点数N
-% xVecArr : 入力信号x
 % mu : ステップサイズμ
 % el : 繰り返し回数L
-% pFn : 生成モデルp
-% phiFn : スコア関数φ
-dims = 2;
-xVecArr = zeros(dims, 10);
-mu = 0.001;
+% pFn : 生成モデルp(y)
+% phiFn : スコア関数φ(y)
+mu = 0.8;
 el = 30;
-pFn = @(y) 1 / pi : sech(y);
+pFn = @(y) 1 / pi * sech(y);
 phiFn = @(y) tanh(y);
 
-% xLen : 入力信号長
-% iMat : N次単位行列
-% yVecArr : 分離信号y
-% wMatArr : 分離行列の列
-xLen = size(xVecArr, 2);
-iMat = eye(dims);
-yVecArr = zeros(dims, xLen);
-wMatArr = zeros(dims, dims, el);
+% xVecArr : 入力信号xの列
+% xLen : 入力信号長T
+% dim : 次元N
+% iMat : N次単位行列I
+[xVecArr, fs] = audioread("1+2+3.wav");
+xLen = size(xVecArr, 1);
+dim = size(xVecArr, 2);
+iMat = eye(dim);
 
+% 分離行列Wの列
+wMatArr = zeros(dim, dim, el);
 wMatArr(:, :, 1) = iMat;
 for i = 1:el - 1
-    % eMat : 期待値の行列E
-    eMat = zeros(dims, dims);
-
-    % y = W * x
-    yVecArr = wMatArr(:, :, i) * xVecArr;
-    % E = SUM(R) / T
+    eMat = zeros(dim);
     for j = 1:xLen
-        yVec = wMatArr(:, :, i) * xVecArr(:, j);
-        rMat = phiFn(yVec) * yVec';
+        yVec = wMatArr(:, :, i) * xVecArr(j, :)';
+        pVec = phiFn(yVec);
+        rMat = pVec * yVec';
         eMat = eMat + rMat;
     end
     eMat = eMat / xLen;
@@ -41,14 +35,19 @@ for i = 1:el - 1
     wMatArr(:, :, i + 1) = wMatArr(:, :, i) - mu * (eMat - iMat) * wMatArr(:, :, i);
 end
 
-% カルバックーライブラ・ダイバージェンスJの列
-jArr = zeros(xLen, 1);
-for i = 1:el
-    jArr(i) = -log(abs(det(wMatArr(:, :, i)))) - sum(log(pFn(yVecArr))) / xLen;
+% y = W * x
+yVecArr = zeros(xLen, dim);
+for i = 1:xLen
+    yVecArr(i, :) = wMatArr(:, :, end) * xVecArr(i, :)';
 end
 
+% カルバックーライブラ・ダイバージェンスJの列
+jArr = zeros(el, 1);
+for i = 1:el
+    jArr(i) = -log(abs(det(wMatArr(:, :, i)))) - sum(log(pFn(yVecArr)), "all") / xLen;
+end
 plot(jArr);
 
-for i = 1:xLen
-    yVecArr(:, i) = wMatArr(:, :, end) * xVecArr(:, i);
-end
+maxVol = max(yVecArr, [], "all");
+yVecArr = yVecArr / maxVol * 0.8;
+audiowrite("1&2&3.wav", yVecArr, fs);

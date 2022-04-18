@@ -24,15 +24,14 @@ jFn = @(w, y) -log(abs(det(w))) - sum(log(pFn(y)), "all") / xLen;
 % wMat : 分離行列W
 % yVecArr : 分離信号yの列
 % jArr : カルバックーライブラ・ダイバージェンスJの列
+jArr = zeros(el, 1);
 wMat = iMat;
 yVecArr = xVecArr;
-jArr = zeros(el, 1);
 jArr(1) = jFn(wMat, yVecArr);
 for i = 1:el - 1
     eMat = zeros(dim);
     for j = 1:xLen
         yVec = wMat * xVecArr(j, :)';
-        yVecArr(j, :) = yVec';
         pVec = phiFn(yVec);
         rMat = pVec * yVec';
         eMat = eMat + rMat;
@@ -41,13 +40,12 @@ for i = 1:el - 1
 
     % W[i + 1] = W[i] - μ * (E - I) * W[i]
     wMat = wMat - mu * (eMat - iMat) * wMat;
+    for j = 1:xLen
+        yVecArr(j, :) = (wMat * xVecArr(j, :)')';
+    end
     jArr(i + 1) = jFn(wMat, yVecArr);
 end
 
-for j = 1:xLen
-    yVec = wMat * xVecArr(j, :)';
-    yVecArr(j, :) = yVec';
-end
 plot(jArr);
 
 maxVol = max(yVecArr, [], "all");

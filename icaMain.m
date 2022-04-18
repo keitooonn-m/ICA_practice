@@ -31,18 +31,15 @@ jArr(1) = jFn(wMat, yVecArr);
 for i = 1:el - 1
     eMat = zeros(dim);
     for j = 1:xLen
-        yVec = wMat * xVecArr(j, :)';
-        pVec = phiFn(yVec);
-        rMat = pVec * yVec';
+        pVec = phiFn(yVecArr(j, :)');
+        rMat = pVec * yVecArr(j, :);
         eMat = eMat + rMat;
     end
     eMat = eMat / xLen;
 
     % W[i + 1] = W[i] - μ * (E - I) * W[i]
     wMat = wMat - mu * (eMat - iMat) * wMat;
-    for j = 1:xLen
-        yVecArr(j, :) = (wMat * xVecArr(j, :)')';
-    end
+    yVecArr = (wMat * xVecArr')';
     jArr(i + 1) = jFn(wMat, yVecArr);
 end
 

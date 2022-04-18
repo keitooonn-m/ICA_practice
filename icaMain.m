@@ -2,12 +2,8 @@ clear; close all; clc;
 
 % mu : ステップサイズμ
 % el : 繰り返し回数L
-% pFn : 生成モデルp(y)
-% phiFn : スコア関数φ(y)
 mu = 0.5;
 el = 30;
-pFn = @(y) 1 / pi * sech(y);
-phiFn = @(y) tanh(y);
 
 % xVecArr : 入力信号xの列
 % xLen : 入力信号長T
@@ -18,13 +14,25 @@ xLen = size(xVecArr, 1);
 dim = size(xVecArr, 2);
 iMat = eye(dim);
 
-% 分離行列Wの列
-wMatArr = zeros(dim, dim, el);
-wMatArr(:, :, 1) = iMat;
+% pFn : 生成モデルp(y)
+% phiFn : スコア関数φ(y)
+% jFn : カルバック・ライブラー・ダイバージェンスの計算関数J
+pFn = @(y) 1 / pi * sech(y);
+phiFn = @(y) tanh(y);
+jFn = @(w, y) -log(abs(det(w))) - sum(log(pFn(y)), "all") / xLen;
+
+% wMat : 分離行列W
+% yVecArr : 分離信号yの列
+% jArr : カルバックーライブラ・ダイバージェンスJの列
+wMat = iMat;
+yVecArr = xVecArr;
+jArr = zeros(el, 1);
+jArr(1) = jFn(wMat, yVecArr);
 for i = 1:el - 1
     eMat = zeros(dim);
     for j = 1:xLen
-        yVec = wMatArr(:, :, i) * xVecArr(j, :)';
+        yVec = wMat * xVecArr(j, :)';
+        yVecArr(j, :) = yVec';
         pVec = phiFn(yVec);
         rMat = pVec * yVec';
         eMat = eMat + rMat;
@@ -32,19 +40,13 @@ for i = 1:el - 1
     eMat = eMat / xLen;
 
     % W[i + 1] = W[i] - μ * (E - I) * W[i]
-    wMatArr(:, :, i + 1) = wMatArr(:, :, i) - mu * (eMat - iMat) * wMatArr(:, :, i);
+    wMat = wMat - mu * (eMat - iMat) * wMat;
+    jArr(i + 1) = jFn(wMat, yVecArr);
 end
 
-% y = W * x
-yVecArr = zeros(xLen, dim);
-for i = 1:xLen
-    yVecArr(i, :) = wMatArr(:, :, end) * xVecArr(i, :)';
-end
-
-% カルバックーライブラ・ダイバージェンスJの列
-jArr = zeros(el, 1);
-for i = 1:el
-    jArr(i) = -log(abs(det(wMatArr(:, :, i)))) - sum(log(pFn(yVecArr)), "all") / xLen;
+for j = 1:xLen
+    yVec = wMat * xVecArr(j, :)';
+    yVecArr(j, :) = yVec';
 end
 plot(jArr);
 

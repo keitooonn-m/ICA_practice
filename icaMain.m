@@ -4,7 +4,7 @@ clear; close all; clc;
 % el : 繰り返し回数L
 % pFn : 生成モデルp(y)
 % phiFn : スコア関数φ(y)
-mu = 0.8;
+mu = 0.5;
 el = 30;
 pFn = @(y) 1 / pi * sech(y);
 phiFn = @(y) tanh(y);

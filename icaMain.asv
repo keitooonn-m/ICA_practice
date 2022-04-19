@@ -10,7 +10,10 @@ el = 30;
 % xLen : 入力信号長T
 % dim : 次元N
 % iMat : N次単位行列I
-[xVecArr, fs] = audioread("in.wav");
+pathList = dir("in/*.wav");
+size(pathList)
+
+[xVecArr, fs] = audioread("1+2+3.wav");
 [xLen, dim] = size(xVecArr);
 iMat = eye(dim);
 

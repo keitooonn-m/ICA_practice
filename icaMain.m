@@ -1,5 +1,8 @@
 clear; close all; clc;
 
+% パス追加
+addpath("./bss_eval");
+
 % mu : ステップサイズμ
 % el : 繰り返し回数L
 mu = 0.5;
@@ -10,7 +13,7 @@ el = 30;
 % xLen : 入力信号長T
 % dim : 次元N
 % iMat : N次単位行列I
-[xVecArr, fs] = audioread("in.wav");
+[xVecArr, fs] = audioread("in/in.wav");
 [xLen, dim] = size(xVecArr);
 iMat = eye(dim);
 
@@ -47,7 +50,19 @@ for i = 1:dim
     yPBMatArr(:, :, i) = (wMat \ iMat(:, i) .* yVecArr')';
 end
 
-% 出力
+% SDR算出
+yAnsVecArrT = audioread("in/ans.wav")';
+sdrMat = zeros(dim);
+for i = 1:dim
+    yPBVecArrT = zeros(dim, xLen);
+    for j = 1:dim
+        yPBVecArrT(j, :) = yPBMatArr(:, j, i)';
+    end
+    [sdrMat(:, i), ~, ~] = bss_eval_sources(yPBVecArrT, yAnsVecArrT);
+end
+disp(sdrMat);
+
+% ファイル出力
 if not(exist("out", "dir"))
     mkdir("out");
 end
